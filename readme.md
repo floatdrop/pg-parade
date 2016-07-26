@@ -6,11 +6,9 @@
 	<br>
 </h1>
 
-> Manage connections to Postgres replications
-
 [![Build Status](https://travis-ci.org/floatdrop/pg-parade.svg?branch=master)](https://travis-ci.org/floatdrop/pg-parade)
 
-This module extends [pg-promise](https://github.com/vitaly-t/pg-promise) for replications support.
+This module wraps [pg-promise](https://github.com/vitaly-t/pg-promise) for read/write replica support.
 
 ## Install
 
