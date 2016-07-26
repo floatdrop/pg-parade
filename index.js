@@ -50,11 +50,31 @@ module.exports = function (opts) {
 
 	PgParade.prototype._makeProxy = function _makeProxy(type) {
 		const self = this;
-		return {
-			query(query, values, qrm) {
-				return self._getReplicas().then(replicas => replicas[type].query(query, values, qrm));
-			}
-		};
+
+		const proxy = {};
+
+		[
+			'query',
+			'none',
+			'one',
+			'many',
+			'any',
+			'oneOrNone',
+			'manyOrNone',
+			'func',
+			'proc',
+			'task',
+			'tx',
+			'end'
+		].forEach(method => {
+			proxy[method] = function () {
+				const args = arguments;
+				return self._getReplicas().then(replicas =>
+					replicas[type][method].apply(replicas[type], args));
+			};
+		});
+
+		return proxy;
 	};
 
 	return PgParade;
