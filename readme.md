@@ -28,8 +28,8 @@ const db = pgp({
 	read: 'postgres://localhost:5433/postgres'
 });
 
-db.write.query('INSERT INTO test VALUES (1)'); // Will be executed on closest write server
-db.read.query('SELECT * FROM test'); // Will be executed on closest read server
+db.write.query('INSERT INTO test VALUES (1)'); // Will be executed on write server
+db.read.query('SELECT * FROM test'); // Will be executed on read server
 ```
 
 
