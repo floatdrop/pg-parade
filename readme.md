@@ -41,19 +41,23 @@ db.read.query('SELECT * FROM test'); // Will be executed on read server
 
 Returns instance of initialized database factory.
 
-### factory(cluster)
+### pgSelect(replicas)
 
 Returns Database object with two operations scopes:
 
 - `read` - query will be executed on closest read server
 - `write` - query will be executed on closest write server
 
-#### cluster
+#### replicas
 Type: `Object`, `Function`
 
 Object with `read` and `write` connection strings.
 
 If `cluster` is type of Function – then it should return a promise, resolving to an Object.
+
+### Transactions
+
+When calling `tx` method, callback will recieve proxy object with `read` and `write` properties, but all `read` requests will be executed on `write` replica.
 
 ## License
 
