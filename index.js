@@ -104,5 +104,8 @@ module.exports = function (opts) {
 		return proxy;
 	};
 
+	PgParade.prototype.as = pgPromise.as;
+	PgParade.prototype.utils = pgPromise.utils;
+
 	return PgParade;
 };
