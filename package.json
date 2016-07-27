@@ -1,6 +1,6 @@
 {
   "name": "pg-parade",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Manage connections to Postgres replications",
   "license": "MIT",
   "repository": "floatdrop/pg-parade",
