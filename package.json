@@ -22,7 +22,8 @@
     ""
   ],
   "dependencies": {
-    "pg-promise": "^5.2.5"
+    "pg-promise": "^5.2.5",
+    "stack-utils": "^0.4.0"
   },
   "devDependencies": {
     "ava": "^0.15.1",

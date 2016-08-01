@@ -1,6 +1,27 @@
 'use strict';
 
 const pgPromise = require('pg-promise');
+const StackUtils = require('stack-utils');
+
+const stack = new StackUtils({
+	cwd: process.cwd(),
+	internals: StackUtils.nodeInternals()
+});
+
+function indent(str) {
+	return '    at ' + str;
+}
+
+const proxyMethods = [
+	'query',
+	'none',
+	'one',
+	'many',
+	'any',
+	'oneOrNone',
+	'manyOrNone',
+	'end'
+];
 
 module.exports = function (opts) {
 	const PgParade = function PgParade(replicas) {
@@ -53,27 +74,15 @@ module.exports = function (opts) {
 	PgParade.prototype._makeProxy = function _makeProxy(type) {
 		const self = this;
 
-		const proxy = {};
+		function PgParade() {}
+		const proxy = new PgParade();
 
-		[
-			'query',
-			'none',
-			'one',
-			'many',
-			'any',
-			'oneOrNone',
-			'manyOrNone',
-			// 'func',
-			// 'proc',
-			// 'task',
-			// 'tx',
-			'end'
-		].forEach(method => {
+		for (let method of proxyMethods) {
 			proxy[method] = function () {
 				const args = arguments;
+				const stackTrace = stack.captureString(8, proxy[method]);
 				return self._getReplicas().then(replicas => {
 					const f = replicas[type][method];
-
 					if (f === undefined) {
 						if (method === 'end') {
 							return undefined;
@@ -83,9 +92,18 @@ module.exports = function (opts) {
 					}
 
 					return f.apply(replicas[type], args);
+				}).catch(err => {
+					const title = err.stack.split('\n')[0];
+					err.stack = title;
+					if (typeof args[0] === 'string') {
+						err.stack += '\nquery:\n  ' + args[0] + '\n';
+					}
+					err.stack += stackTrace.split('\n').filter(Boolean).map(indent).join('\n');
+					throw err;
 				});
 			};
-		});
+			Object.defineProperty(proxy[method], 'name', {value: method, configurable: true});
+		}
 
 		proxy.tx = function (cb) {
 			if (type === 'read') {
