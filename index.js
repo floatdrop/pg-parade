@@ -2,6 +2,7 @@
 
 const pgPromise = require('pg-promise');
 const StackUtils = require('stack-utils');
+const mem = require('mem');
 
 const stack = new StackUtils({
 	cwd: process.cwd(),
@@ -45,23 +46,36 @@ module.exports = function (opts) {
 
 		this.write = this._makeProxy('write');
 		this.read = this._makeProxy('read');
+		this.connections = new Map();
 	};
 
 	PgParade.prototype._getReplicas = function _getReplicas() {
 		return this._replicas().then(replicas => {
-			if (typeof replicas.read === 'string' || typeof replicas.read === 'object') {
-				const pgp = pgPromise(Object.assign({}, opts, {noLocking: true}));
-				replicas.read = pgp(replicas.read);
-				replicas.read.end = () => pgp.end();
+			let read = replicas.read;
+			if (typeof read === 'string' || typeof read === 'object') {
+				if (this.connections.has(replicas.read)) {
+					read = this.connections.get(replicas.read);
+				} else {
+					const pgp = pgPromise(Object.assign({}, opts, {noLocking: true}));
+					read = pgp(read);
+					read.end = () => pgp.end();
+					this.connections.set(replicas.read, read);
+				}
 			}
 
-			if (typeof replicas.write === 'string' || typeof replicas.write === 'object') {
-				const pgp = pgPromise(Object.assign({}, opts, {noLocking: true}));
-				replicas.write = pgp(replicas.write);
-				replicas.write.end = () => pgp.end();
+			let write = replicas.write;
+			if (typeof write === 'string' || typeof write === 'object') {
+				if (this.connections.has(replicas.write)) {
+					write = this.connections.get(replicas.write);
+				} else {
+					const pgp = pgPromise(Object.assign({}, opts, {noLocking: true}));
+					write = pgp(write);
+					write.end = () => pgp.end();
+					this.connections.set(replicas.write, write);
+				}
 			}
 
-			return replicas;
+			return {read, write};
 		});
 	};
 
