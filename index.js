@@ -2,7 +2,6 @@
 
 const pgPromise = require('pg-promise');
 const StackUtils = require('stack-utils');
-const mem = require('mem');
 
 const stack = new StackUtils({
 	cwd: process.cwd(),
