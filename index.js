@@ -48,20 +48,14 @@ module.exports = function (opts) {
 	};
 
 	PgParade.prototype._getReplicas = function _getReplicas() {
-		let replicas = this._replicas();
-
-		if (typeof replicas.then !== 'function') {
-			replicas = Promise.resolve(replicas);
-		}
-
-		return replicas.then(replicas => {
-			if (typeof replicas.read === 'string') {
+		return this._replicas().then(replicas => {
+			if (typeof replicas.read === 'string' || typeof replicas.read === 'object') {
 				const pgp = pgPromise(Object.assign({}, opts, {noLocking: true}));
 				replicas.read = pgp(replicas.read);
 				replicas.read.end = () => pgp.end();
 			}
 
-			if (typeof replicas.write === 'string') {
+			if (typeof replicas.write === 'string' || typeof replicas.write === 'object') {
 				const pgp = pgPromise(Object.assign({}, opts, {noLocking: true}));
 				replicas.write = pgp(replicas.write);
 				replicas.write.end = () => pgp.end();
@@ -105,18 +99,18 @@ module.exports = function (opts) {
 			Object.defineProperty(proxy[method], 'name', {value: method, configurable: true});
 		}
 
-		proxy.tx = function (cb) {
+		proxy.tx = function tx(cb) {
 			if (type === 'read') {
 				throw new Error('Can not run transaction on read replica');
 			}
 
-			return self._getReplicas().then(replicas =>
-				replicas.write.tx(t => {
-					return cb({
-						write: t,
-						read: t
-					});
-				}));
+			return self._getReplicas().then(replicas => {
+				return replicas.write.tx(t => {
+					t.read = t;
+					t.write = t;
+					return cb(t);
+				});
+			});
 		};
 
 		return proxy;
