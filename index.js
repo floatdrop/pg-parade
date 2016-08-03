@@ -49,7 +49,12 @@ module.exports = function (opts) {
 	};
 
 	PgParade.prototype._getReplicas = function _getReplicas() {
-		return this._replicas().then(replicas => {
+		let repl = this._replicas();
+		if (typeof repl.then !== 'function') {
+			repl = Promise.resolve(repl);
+		}
+
+		return repl.then(replicas => {
 			let read = replicas.read;
 			if (typeof read === 'string' || typeof read === 'object') {
 				if (this.connections.has(replicas.read)) {
