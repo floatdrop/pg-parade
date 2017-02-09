@@ -117,17 +117,23 @@ module.exports = function (opts) {
 			Object.defineProperty(proxy[method], 'name', {value: method, configurable: true});
 		}
 
+		function patchTx(tx) {
+			return cb => tx(t => {
+				t.tx = patchTx(t.tx);
+				t.write = t;
+				t.read = t;
+				return cb(t);
+			});
+		}
+
 		proxy.tx = function tx(cb) {
 			if (type === 'read') {
 				throw new Error('Can not run transaction on read replica');
 			}
 
 			return self._getReplicas().then(replicas => {
-				return replicas.write.tx(t => {
-					t.read = t;
-					t.write = t;
-					return cb(t);
-				});
+				replicas.write.tx = patchTx(replicas.write.tx);
+				return replicas.write.tx(cb);
 			});
 		};
 
